@@ -23,6 +23,7 @@ func main(){
 	app.Post("/createQuiz", dbVar.CreateQuiz)
 	app.Delete("/deleteQuiz/:id", dbVar.DeleteQuiz)
 	app.Post("/answer/question/:quizId", dbVar.AswerQuestion)
+	app.Post("/saveResult", middlewares.IsAuth(),dbVar.SaveResult)
 	//User routes
 	app.Get("/user/:id", dbVar.GetUser)
 	app.Post("/register", dbVar.Register)

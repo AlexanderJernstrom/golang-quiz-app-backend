@@ -10,8 +10,8 @@ import (
 )
 
 
-func IsAuth() func(c *fiber.Ctx)  {
-	return func(c *fiber.Ctx) {
+func IsAuth() func(c *fiber.Ctx)   {
+	return func(c *fiber.Ctx)  {
 		notParsedToken := c.Get("authToken")
 		claims := new(database.Claims)
 		token, err := jwt.ParseWithClaims(notParsedToken, claims,func (token *jwt.Token) (interface{}, error){

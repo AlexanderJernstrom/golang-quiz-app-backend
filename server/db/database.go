@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
 	Quiz "server/models/QuizModel"
 	User "server/models/UserModel"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber"
@@ -32,6 +34,11 @@ type Claims struct{
 type QuestionAnswer struct{
 	QuestionID *primitive.ObjectID `json:"id"`
 	Answer *string `json:"answer"`
+}
+
+type SaveResultBody struct{
+	RightAmount *int `json:"rightAmount"`
+	QuizId *string `json:"_id"` 
 }
 
 func ConnectToDatabase() *DB {
@@ -77,7 +84,7 @@ func (db *DB) GetAllQuizzes(c *fiber.Ctx){
 	c.JSON(quizzes)
 }
 
-func (db *DB) GetQuiz (c *fiber.Ctx){
+func (db *DB) GetQuiz(c *fiber.Ctx){
 	quizCollection := db.Client.Database("test").Collection("quizzes")
 
 	quizId := c.Params("id")
@@ -174,11 +181,42 @@ func (db *DB) AswerQuestion(c *fiber.Ctx){
 			rightQuestion = questions[i]
 		}
 	}
-	if &rightQuestion.Answer == answerBody.Answer{
-		c.Send("Right answer")
+	fmt.Println(reflect.TypeOf(&rightQuestion.Answer) == reflect.TypeOf(answerBody.Answer))
+	if rightQuestion.Answer == *answerBody.Answer{
+		responseMap := map[string]bool{rightQuestion.Text: true}
+		
+		c.JSON(responseMap)
 	} else {
-		c.Send("Wrong answer")
+		responseMap := map[string]bool{rightQuestion.Text: false}
+
+		c.JSON(responseMap)
 	}
+}
+
+func (db *DB) SaveResult(c *fiber.Ctx){
+	id := c.Locals("id")
+	fmt.Println(id)
+	quizCollection := db.Client.Database("test").Collection("quizzes")
+	userCollection := db.Client.Database("test").Collection("users")
+
+	user := new(User.User)
+	var requestBody *SaveResultBody = new(SaveResultBody)
+
+	userCollection.FindOne( context.Background(), bson.M{"_id": id}).Decode(&user)
+	fmt.Println(requestBody)
+	if err := c.BodyParser(requestBody); err != nil {
+		log.Fatal(err)
+	}
+	var insertResultVar *Quiz.PlayedBy = &Quiz.PlayedBy{Name: *user.Name, RightAmount: *requestBody.RightAmount, Date: time.Now()}
+	
+	quizCollection.FindOneAndUpdate( context.Background(), bson.M{"_id": requestBody.QuizId}, bson.D{
+		{"$push", bson.D{{"playedBy", insertResultVar}}},
+	})
+	userCollection.UpdateOne( context.Background(), bson.M{"_id": id}, bson.D{
+		{"$push", bson.D{{"playedQuizzes", requestBody.QuizId}}},
+	})
+
+	c.Send("This was done")
 }
 
 func (db *DB) Login(c *fiber.Ctx){
