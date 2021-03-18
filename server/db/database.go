@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"reflect"
 	Quiz "server/models/QuizModel"
 	User "server/models/UserModel"
@@ -19,7 +20,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var Key string = "hksjadhfkjhsadjkfhkasdfhksadf"
 
 type DB struct{
 	Client *mongo.Client
@@ -41,10 +41,13 @@ type SaveResultBody struct{
 	QuizId *string `json:"_id"` 
 }
 
-func ConnectToDatabase() *DB {
-	var connectionUrl string = "mongodb+srv://alex123:brazil56@cluster0-cyvmn.mongodb.net/test?retryWrites=true&w=majority"
+var mongoString string = os.Getenv("MONGO_URI")
+var Key string = os.Getenv("key")
 
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connectionUrl))
+func ConnectToDatabase() *DB {
+
+
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoString))
 
 	if err != nil {
 		log.Fatal(err)

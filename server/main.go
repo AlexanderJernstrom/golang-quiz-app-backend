@@ -14,7 +14,7 @@ import (
 func main(){
 	dbVar := database.ConnectToDatabase()
 
-
+	
 	app := fiber.New()
 	app.Use("/createQuiz", middlewares.IsAuth())
 	//Quiz routes
